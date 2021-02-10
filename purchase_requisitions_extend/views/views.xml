@@ -1,0 +1,153 @@
+<odoo>
+  <data>
+      <record id="purchase_order_form_inherit" model="ir.ui.view">
+        <field name="name">purchase.order.form.inherit</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='partner_id']" position="after">
+                <field name="validation_level_required" invisible="1"/>
+            </xpath>
+
+
+            
+            <xpath expr="//field[@name='partner_ref']" position="after">
+                <field name="compute_validation_purchasing_user" invisible="1"/>
+                <field name="compute_validation_purchasing_manager" invisible="1"/>
+                <field name="compute_validation_department_manager" invisible="1"/>
+                <field name="compute_validation_director" invisible="1"/>
+                <field name="compute_validation_cfo_or_coo" invisible="1"/>
+                <field name="compute_validation_ceo" invisible="1"/>           
+            </xpath>
+
+            <xpath expr="//sheet/group" position="after">
+                <group string="Approvals Left" >
+                      <field name="validation_purchasing_user" attrs="{'invisible': [('compute_validation_purchasing_user', '=', True)]}" readonly="1"/>
+                      <field name="validation_purchasing_manager" attrs="{'invisible': [('compute_validation_purchasing_manager', '=', True)]}" readonly="1"/>
+                      <field name="validation_department_manager" attrs="{'invisible': [('compute_validation_department_manager', '=', True)]}" readonly="1"/>
+                      <field name="validation_director" attrs="{'invisible': [('compute_validation_director', '=', True)]}"  readonly="1"/>
+                      <field name="validation_cfo_or_coo" attrs="{'invisible': [('compute_validation_cfo_or_coo', '=', True)]}"  readonly="1"/>
+                      <field name="validation_ceo" attrs="{'invisible': [('compute_validation_ceo', '=', True)]}"  readonly="1"/> 
+                </group>
+            </xpath>
+
+            <xpath expr="//sheet" position="before">
+                 <button name="button_validation_purchasing_user" string="Approval by PO User" type="object" class="btn-primary" groups="purchase.group_purchase_user" attrs="{'invisible': [('compute_validation_purchasing_user', '=', True)]}"/>
+                 
+                 <button name="button_validation_purchasing_manager" string="Approval by Purchase Manager" type="object" class="btn-primary"  groups="purchase_requisitions_extend.group_purchase_manager" attrs="{'invisible': [('compute_validation_purchasing_manager', '=', True)]}"/>
+                 
+                 <button name="button_validation_department_manager" string="Approval by Department Manager" type="object" class="btn-primary"  groups="purchase_requisitions_extend.group_purchase_department_manager" attrs="{'invisible': [('compute_validation_department_manager', '=', True)]}"/>
+                 
+                 <button name="button_validation_director" string="Approval by Director" type="object" class="btn-primary" groups="purchase_requisitions_extend.group_purchase_director"  attrs="{'invisible': [('compute_validation_director', '=', True)]}"/>
+                 
+                 <button name="button_validation_cfo_or_coo" string="Approval by CFO/COO" type="object" class="btn-primary" groups="purchase_requisitions_extend.group_purchase_cfo_or_coo" attrs="{'invisible': [('compute_validation_cfo_or_coo', '=', True)]}"/>
+
+                 <button name="button_validation_ceo" string="Approval by CEO" type="object" class="btn-primary" groups="purchase_requisitions_extend.group_purchase_ceo" attrs="{'invisible': [('compute_validation_ceo', '=', True)]}"/>
+            </xpath>
+        </field>
+      </record>
+
+      <record id="material_purchase_requisition_form_view_inherit" model="ir.ui.view">
+        <field name="name">material.purchase.requisition.form.inherit</field>
+        <field name="model">material.purchase.requisition</field>
+        <field name="inherit_id" ref="bi_material_purchase_requisitions.material_purchase_requisition_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='requisition_line_ids']/tree/field[@name='description']" position="after">
+               <field name="account_analytic_id"/>
+            </xpath>
+            <xpath expr="//sheet/notebook/page[2]" position="replace">
+                <page string="Picking Details">
+                    <group>
+                        <field name="use_manual_locations"/>
+                    </group>
+                    <group string ="Purchase Order Configration">
+                        <group>
+                            <field name="picking_type_id" attrs="{'readonly': [('state', 'in', ['cancel'])]}"/>
+                        </group>
+                    </group>
+                    <group string ="Internal Picking Configration">
+                        <group>
+                            <field name="source_location_id" attrs="{'readonly': [('state', 'in', ['cancel'])],'required':[('use_manual_locations' ,'=',True)],'invisible': [('use_manual_locations', '=', False)]}"/>
+                            <field name="destination_location_id" attrs="{'readonly': [('state', 'in', ['cancel'])],'required':[('use_manual_locations' ,'=',True)],'invisible': [('use_manual_locations', '=', False)]}"/>
+                            <field name="internal_picking_id" attrs="{'readonly': [('state', 'in', ['cancel'])],'invisible': [('use_manual_locations', '=', True)],'required':[('use_manual_locations' ,'=',False)]}"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+      </record>
+
+      <record id="view_company_form_inherit" model="ir.ui.view">
+        <field name="name">res.company.form.inherit</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="base.view_company_form"/>
+        <field name="arch" type="xml">
+          <xpath expr="//notebook" position="inside">
+            <page name='appovals_levels' string="Approval Level">
+              <group>
+                <field name="is_purchase_validation_required"/>
+              </group>
+              <group attrs="{'invisible': [('is_purchase_validation_required', '=', False)]}">
+                <label for="purchase_user_amount_min" string="Purchase User Amount" />
+                  <div name="purchase_user_amount_container">
+                      <div class="row">
+                          <div class="col-xs-12 col-md-3">
+                              <field name="purchase_user_amount_min"/>
+                              <label for="purchase_user_amount_max" string=" To "/>
+                              <field name="purchase_user_amount_max"/> 
+                          </div>
+                      </div>
+                  </div>
+
+                  <label for="department_manager_amount_min" string="Department Manager Amount"/>
+                  <div name="department_manager_amount_container">
+                      <div class="row">
+                          <div class="col-xs-12 col-md-3">
+                              <field name="department_manager_amount_min"/>
+                              <label for="department_manager_amount_max" string=" To "/>
+                              <field name="department_manager_amount_max"/> 
+                          </div>
+                      </div>
+                  </div>
+
+                  <label for="director_amount_min" string="Director Amount"/>
+                  <div name="director_amount_container">
+                      <div class="row">
+                          <div class="col-xs-12 col-md-3">
+                              <field name="director_amount_min"/>
+                              <label for="director_amount_max" string=" To "/>
+                              <field name="director_amount_max"/> 
+                          </div>
+                      </div>
+                  </div>
+
+                  <label for="cfo_amount_min" string="CFO/COO Amount"/>
+                  <div name="cfo_amount_container">
+                      <div class="row">
+                          <div class="col-xs-12 col-md-3">
+                              <field name="cfo_amount_min"/>
+                              <label for="cfo_amount_max" string=" To "/>
+                              <field name="cfo_amount_max"/> 
+                          </div>
+                      </div>
+                  </div>
+
+                   <label for="ceo_amount_min" string="CEO Amount"/>
+                  <div name="ceo_amount_container">
+                      <div class="row">
+                          <div class="col-xs-12 col-md-3">
+                              <field name="ceo_amount_min"/>
+                          </div>
+                      </div>
+                  </div>
+              </group>
+            </page>
+
+          </xpath>
+        </field>
+      </record>
+
+
+
+  </data>
+</odoo>
