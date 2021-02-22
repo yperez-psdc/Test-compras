@@ -2,6 +2,7 @@
 
 from odoo import models, fields, api,_
 from odoo.exceptions import ValidationError
+from datetime import datetime, timedelta
 
 class ResCompany(models.Model):
     _inherit = "res.company"
@@ -360,21 +361,14 @@ class PurchaseOrder(models.Model):
                 elif rec.state in ["draft","sent","to_approve"]:
                     rec.compute_validation_ceo =False
 
-
-    compute_validation_purchasing_user = fields.Boolean(string="Purchasing User", compute='calculate_validation_purchasing_user')
-    compute_validation_purchasing_manager = fields.Boolean(string="Purchasing Manager", compute='calculate_validation_purchasing_manager')
-    compute_validation_department_manager = fields.Boolean(string="Department Manager", compute='calculate_validation_department_manager')
-    compute_validation_director = fields.Boolean(string="Director", compute='calculate_validation_director')
-    compute_validation_cfo_or_coo = fields.Boolean(string="CFO or COO", compute='calculate_validation_cfo_or_coo')
-    compute_validation_ceo = fields.Boolean(string="CEO", compute='calculate_validation_ceo')
-
-
-    validation_purchasing_user = fields.Boolean(string="Purchasing User", default=False)
-    validation_purchasing_manager = fields.Boolean(string="Purchasing Manager", default=False)
-    validation_department_manager = fields.Boolean(string="Department Manager", default=False)
-    validation_director = fields.Boolean(string="Director", default=False)
-    validation_cfo_or_coo = fields.Boolean(string="CFO or COO", default=False)
-    validation_ceo = fields.Boolean(string="CEO", default=False)
+    def calculate_validation_required(self):
+        if self.company_id:
+            if self.company_id.is_purchase_validation_required:
+                self.is_purchase_validation_required = True
+            else:
+                self.is_purchase_validation_required = False
+        else:
+            self.is_purchase_validation_required=False
 
     def _compute_validation_level_required(self):
         for rec in self:
@@ -403,6 +397,22 @@ class PurchaseOrder(models.Model):
                 rec.validation_level_required = 'no'
 
 
+    is_purchase_validation_required = fields.Boolean(string="Purchase validation Required ?", compute='calculate_validation_required', store=True) 
+    compute_validation_purchasing_user = fields.Boolean(string="Purchasing User", compute='calculate_validation_purchasing_user')
+    compute_validation_purchasing_manager = fields.Boolean(string="Purchasing Manager", compute='calculate_validation_purchasing_manager')
+    compute_validation_department_manager = fields.Boolean(string="Department Manager", compute='calculate_validation_department_manager')
+    compute_validation_director = fields.Boolean(string="Director", compute='calculate_validation_director')
+    compute_validation_cfo_or_coo = fields.Boolean(string="CFO or COO", compute='calculate_validation_cfo_or_coo')
+    compute_validation_ceo = fields.Boolean(string="CEO", compute='calculate_validation_ceo')
+
+
+    validation_purchasing_user = fields.Boolean(string="Purchasing User", default=False)
+    validation_purchasing_manager = fields.Boolean(string="Purchasing Manager", default=False)
+    validation_department_manager = fields.Boolean(string="Department Manager", default=False)
+    validation_director = fields.Boolean(string="Director", default=False)
+    validation_cfo_or_coo = fields.Boolean(string="CFO or COO", default=False)
+    validation_ceo = fields.Boolean(string="CEO", default=False)
+
     validation_level_required = fields.Selection([
         ('no', 'No'),
         ('one', 'one'),
@@ -410,7 +420,7 @@ class PurchaseOrder(models.Model):
         ('three', 'three'),
         ('four', 'four'),
         ('five', 'five'),
-        ],string = "Validation Level Required", compute='_compute_validation_level_required')
+        ],string = "Validation Level Required", compute='_compute_validation_level_required', store=True)
 
 
     def button_confirm(self):

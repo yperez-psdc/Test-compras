@@ -7,7 +7,7 @@
     'website': "http://www.yourcompany.com",
     'category': 'Uncategorized',
     'version': '0.5',
-    'depends': ['base','bi_material_purchase_requisitions','analytic'],
+    'depends': ['base','bi_material_purchase_requisitions','analytic','account_analytic_default_purchase'],
     'data': [
         # 'security/ir.model.access.csv',
         'security/purchase_requisition_security.xml',
