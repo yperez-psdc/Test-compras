@@ -22,7 +22,7 @@
             </xpath>
 
             <xpath expr="//sheet/group" position="after">
-                <group string="Approvals Left" attrs="{'invisible': [('is_purchase_validation_required', '=', False)]}">
+                <group string="Approvals Left" >
                       <field name="validation_purchasing_user" attrs="{'invisible': [('compute_validation_purchasing_user', '=', True)]}" readonly="1"/>
                       <field name="validation_purchasing_manager" attrs="{'invisible': [('compute_validation_purchasing_manager', '=', True)]}" readonly="1"/>
                       <field name="validation_department_manager" attrs="{'invisible': [('compute_validation_department_manager', '=', True)]}" readonly="1"/>

@@ -6,7 +6,7 @@
     'author': "Abhay Singh Rathore",
     'website': "http://www.yourcompany.com",
     'category': 'Uncategorized',
-    'version': '0.5',
+    'version': '0.6',
     'depends': ['base','bi_material_purchase_requisitions','analytic','account_analytic_default_purchase'],
     'data': [
         # 'security/ir.model.access.csv',
