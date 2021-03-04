@@ -5,9 +5,10 @@ from odoo import api, fields, models, tools, _
 import odoo.addons.decimal_precision as dp
 from datetime import datetime, timedelta
 import math
-from odoo.exceptions import Warning
+from odoo.exceptions import Warning,  UserError, ValidationError
 
 class MaterialPurchaseRequisition(models.Model):
+    # _inherit = ['mail.activity.mixin']
     _name = "material.purchase.requisition"
     _rec_name = 'sequence'
     _order = 'sequence desc'
@@ -46,8 +47,8 @@ class MaterialPurchaseRequisition(models.Model):
                 values['email_from'] = self.employee_id.work_email
                 values['email_to'] = self.requisition_responsible_id.email
                 values['res_id'] = False
-                mail_mail_obj = self.env['mail.mail']
-                msg_id = mail_mail_obj.sudo().create(values)
+                mail_mail_obj = self.env['mail.mail'].sudo()
+                msg_id = mail_mail_obj.create(values)
                 if msg_id:
                     mail_mail_obj.send([msg_id])
 
@@ -156,6 +157,8 @@ class MaterialPurchaseRequisition(models.Model):
         purchase_order_line_obj = self.env['purchase.order.line']
         for requisition in self:
             for line in requisition.requisition_line_ids:
+                if not line.vendor_id:
+                    raise ValidationError(_("Vendor is required to create RFQ."))
                 if line.requisition_action == 'purchase_order':
                     for vendor in line.vendor_id:
                         pur_order = purchase_order_obj.search([('requisition_po_id','=',requisition.id),('partner_id','=',vendor.id)])
@@ -398,8 +401,13 @@ class MaterialPurchaseRequisition(models.Model):
     
     def _get_purchase_order_count(self):
         for po in self:
-            po_ids = self.env['purchase.order'].search([('requisition_po_id','=',po.id)])
+            po_ids = self.env['purchase.order'].search([('requisition_po_id','=',po.id), ('state','in',['purchase', 'done'])])
             po.purchase_order_count = len(po_ids)
+
+    def _get_rfq_count(self):
+        for po in self:
+            rfq_ids = self.env['purchase.order'].search([('requisition_po_id','=',po.id), ('state','in',['draft', 'sent', 'to approve', 'cancel'])])
+            po.rfq_count = len(rfq_ids)
             
     
     def purchase_order_button(self):
@@ -409,7 +417,16 @@ class MaterialPurchaseRequisition(models.Model):
             'type': 'ir.actions.act_window',
             'view_mode': 'tree,form',
             'res_model': 'purchase.order',
-            'domain': [('requisition_po_id', '=', self.id)],
+            'domain': [('requisition_po_id', '=', self.id), ('state','in',['purchase', 'done'])],
+        }
+    def action_rfq_button(self):
+        self.ensure_one()
+        return {
+            'name': 'Purchase Order',
+            'type': 'ir.actions.act_window',
+            'view_mode': 'tree,form',
+            'res_model': 'purchase.order',
+            'domain': [('requisition_po_id', '=', self.id), ('state','in',['draft', 'sent', 'to approve', 'cancel'])],
         }
 
     
@@ -432,6 +449,8 @@ class MaterialPurchaseRequisition(models.Model):
             types = type_obj.search([('code', '=', 'incoming'), ('warehouse_id', '=', False)])
         return types[:1]
 
+    user_message_follower_ids=fields.Many2many('res.users')
+    
     sequence = fields.Char(string='Sequence', readonly=True,copy =False)
     employee_id = fields.Many2one('hr.employee',string="Employee",required=True)
     department_id = fields.Many2one('hr.department',string="Department",required=True)
@@ -442,9 +461,9 @@ class MaterialPurchaseRequisition(models.Model):
     state = fields.Selection([
                                 ('new','New'),
                                 ('department_approval','Waiting Department Approval'),
-                                ('ir_approve','Waiting User Approved'),
-                                ('approved','Approved'),
-                                ('po_created','Purchase Order Created'),
+                                ('ir_approve','Pending'),
+                                ('approved','In Progress'),
+                                ('po_created','RFQ Created'),
                                 ('received','Received'),
                                 ('cancel','Cancel')],string='Stage',default="new")
     requisition_line_ids = fields.One2many('requisition.line','requisition_id',string="Requisition Line ID")    
@@ -461,10 +480,17 @@ class MaterialPurchaseRequisition(models.Model):
     destination_location_id = fields.Many2one('stock.location',string="Destination Location")
     internal_picking_id = fields.Many2one('stock.picking.type',string="Internal Picking Type", default=lambda self: self._default_picking_internal_type())
     internal_picking_count = fields.Integer('Internal Picking Count', compute='_get_internal_picking_count')
+    
+    rfq_count = fields.Integer('RFQ Count', compute='_get_rfq_count')
     purchase_order_count = fields.Integer('Purchase Order', compute='_get_purchase_order_count')
+
     company_id = fields.Many2one('res.company',string="Company" ,required=True,  default=lambda self: self.env.company)
     picking_type_id = fields.Many2one('stock.picking.type', 'Purchase Operation Type', required=True, default=lambda self: self._default_picking_type())
     use_manual_locations = fields.Boolean(string="Select Manual Locations")
+    priority = fields.Selection([
+                                ('low','Low'),
+                                ('high','High'),
+                                ('urgent','Urgent')],string='Priority',default="low")
 
 class RequisitionLine(models.Model):
     _name = "requisition.line"
