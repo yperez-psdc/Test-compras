@@ -397,8 +397,7 @@ class MaterialPurchaseRequisition(models.Model):
             'res_model': 'stock.picking',
             'domain': [('requisition_picking_id', '=', self.id)],
         }
-
-    
+  
     def _get_purchase_order_count(self):
         for po in self:
             po_ids = self.env['purchase.order'].search([('requisition_po_id','=',po.id), ('state','in',['purchase', 'done'])])
@@ -408,8 +407,7 @@ class MaterialPurchaseRequisition(models.Model):
         for po in self:
             rfq_ids = self.env['purchase.order'].search([('requisition_po_id','=',po.id), ('state','in',['draft', 'sent', 'to approve', 'cancel'])])
             po.rfq_count = len(rfq_ids)
-            
-    
+
     def purchase_order_button(self):
         self.ensure_one()
         return {
@@ -422,7 +420,7 @@ class MaterialPurchaseRequisition(models.Model):
     def action_rfq_button(self):
         self.ensure_one()
         return {
-            'name': 'Purchase Order',
+            'name': 'RFQ',
             'type': 'ir.actions.act_window',
             'view_mode': 'tree,form',
             'res_model': 'purchase.order',

@@ -67,6 +67,9 @@ class MaterialPurchaseRequisition(models.Model):
         purchase_order_line_obj = self.env['purchase.order.line']
         for requisition in self:
             for line in requisition.requisition_line_ids:
+                if not line.vendor_id:
+                    raise ValidationError(_("Vendor is required to create RFQ.")) 
+                        
                 if line.requisition_action == 'purchase_order':
                     for vendor in line.vendor_id:
                         pur_order = purchase_order_obj.search([('requisition_po_id','=',requisition.id),('partner_id','=',vendor.id)])

@@ -60,7 +60,7 @@
                                     <field name="description" />
                                     <field name="qty" />
                                     <field name="uom_id" />
-                                    <field name="vendor_id" attrs="{'required': [('requisition_action', '=', 'purchase_order')]}"
+                                    <field name="vendor_id"
                                     context="{'search_default_supplier': 1}" widget="many2many_tags" groups="bi_material_purchase_requisitions.group_purchase_requisition_user,bi_material_purchase_requisitions.group_requisition_department_manager"/>
                                 </tree>
                             </field>
