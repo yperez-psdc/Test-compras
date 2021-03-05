@@ -67,6 +67,9 @@ class MaterialPurchaseRequisition(models.Model):
         purchase_order_line_obj = self.env['purchase.order.line']
         for requisition in self:
             for line in requisition.requisition_line_ids:
+                if not line.vendor_id:
+                    raise ValidationError(_("Vendor is required to create RFQ.")) 
+                        
                 if line.requisition_action == 'purchase_order':
                     for vendor in line.vendor_id:
                         pur_order = purchase_order_obj.search([('requisition_po_id','=',requisition.id),('partner_id','=',vendor.id)])
@@ -307,6 +310,8 @@ class PurchaseOrder(models.Model):
                     rec.compute_validation_purchasing_user =True
                 elif rec.state in ["draft","sent","to_approve"]:
                     rec.compute_validation_purchasing_user =False
+                else:
+                    rec.compute_validation_purchasing_user =False
 
     def calculate_validation_purchasing_manager(self):
         if self:
@@ -315,10 +320,11 @@ class PurchaseOrder(models.Model):
                     rec.compute_validation_purchasing_manager = True
                 elif rec.validation_level_required in ['no', 'one', False]:
                     rec.compute_validation_purchasing_manager =True
-                elif rec.state in ["draft","sent","to_approve"]: 
+                elif rec.state in ["draft","sent","to_approve"]:
                     rec.compute_validation_purchasing_manager = False
-
-
+                else:
+                    rec.compute_validation_purchasing_manager =False
+                
     def calculate_validation_department_manager(self):
         if self:
             for rec in self:
@@ -328,8 +334,9 @@ class PurchaseOrder(models.Model):
                     rec.compute_validation_department_manager =True
                 elif rec.state in ["draft","sent","to_approve"]:
                     rec.compute_validation_department_manager =False
-
-
+                else:
+                    rec.compute_validation_department_manager =False
+                
     def calculate_validation_director(self):
         if self:
             for rec in self:
@@ -338,6 +345,8 @@ class PurchaseOrder(models.Model):
                 elif rec.validation_level_required in ['no', 'one', 'two', False]:
                     rec.compute_validation_director =True
                 elif rec.state in ["draft","sent","to_approve"]:
+                    rec.compute_validation_director =False
+                else:
                     rec.compute_validation_director =False
 
     def calculate_validation_cfo_or_coo(self):
@@ -349,8 +358,9 @@ class PurchaseOrder(models.Model):
                     rec.compute_validation_cfo_or_coo =True
                 elif rec.state in ["draft","sent","to_approve"]:
                     rec.compute_validation_cfo_or_coo =False
-
-
+                else:
+                    rec.compute_validation_cfo_or_coo =False
+               
     def calculate_validation_ceo(self):
         if self:
             for rec in self:
@@ -360,7 +370,9 @@ class PurchaseOrder(models.Model):
                     rec.compute_validation_ceo =True
                 elif rec.state in ["draft","sent","to_approve"]:
                     rec.compute_validation_ceo =False
-
+                else:
+                    rec.compute_validation_ceo =False
+               
     def calculate_validation_required(self):
         if self.company_id:
             if self.company_id.is_purchase_validation_required:
@@ -371,17 +383,17 @@ class PurchaseOrder(models.Model):
             self.is_purchase_validation_required=False
 
     def _compute_validation_level_required(self):
-        for rec in self:
-            purchase_user_amount_min = self.env.company.purchase_user_amount_min
-            purchase_user_amount_max = self.env.company.purchase_user_amount_max
-            department_manager_amount_min = self.env.company.department_manager_amount_min
-            department_manager_amount_max = self.env.company.department_manager_amount_max
-            director_amount_min = self.env.company.director_amount_min
-            director_amount_max = self.env.company.director_amount_max
-            cfo_amount_min = self.env.company.cfo_amount_min
-            cfo_amount_max = self.env.company.cfo_amount_max
-            ceo_amount_min = self.env.company.ceo_amount_min
+        purchase_user_amount_min = self.env.company.purchase_user_amount_min
+        purchase_user_amount_max = self.env.company.purchase_user_amount_max
+        department_manager_amount_min = self.env.company.department_manager_amount_min
+        department_manager_amount_max = self.env.company.department_manager_amount_max
+        director_amount_min = self.env.company.director_amount_min
+        director_amount_max = self.env.company.director_amount_max
+        cfo_amount_min = self.env.company.cfo_amount_min
+        cfo_amount_max = self.env.company.cfo_amount_max
+        ceo_amount_min = self.env.company.ceo_amount_min
 
+        for rec in self:
             if rec.company_id.is_purchase_validation_required:
                 if rec.amount_total >purchase_user_amount_min and rec.amount_total <= purchase_user_amount_max:
                     rec.validation_level_required = 'no'
@@ -393,11 +405,13 @@ class PurchaseOrder(models.Model):
                     rec.validation_level_required = 'four'
                 elif rec.amount_total > ceo_amount_min:
                     rec.validation_level_required = 'five'
+                else:
+                    rec.validation_level_required = 'no'
             else:
                 rec.validation_level_required = 'no'
 
 
-    is_purchase_validation_required = fields.Boolean(string="Purchase validation Required ?", compute='calculate_validation_required', store=True) 
+    is_purchase_validation_required = fields.Boolean(string="Purchase validation Required ?", compute='calculate_validation_required', default=False) 
     compute_validation_purchasing_user = fields.Boolean(string="Purchasing User", compute='calculate_validation_purchasing_user')
     compute_validation_purchasing_manager = fields.Boolean(string="Purchasing Manager", compute='calculate_validation_purchasing_manager')
     compute_validation_department_manager = fields.Boolean(string="Department Manager", compute='calculate_validation_department_manager')
@@ -420,7 +434,9 @@ class PurchaseOrder(models.Model):
         ('three', 'three'),
         ('four', 'four'),
         ('five', 'five'),
-        ],string = "Validation Level Required", compute='_compute_validation_level_required', store=True)
+        ],string = "Validation Level Required", 
+        compute='_compute_validation_level_required')
+
 
 
     def button_confirm(self):

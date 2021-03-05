@@ -102,7 +102,7 @@ odoo Product Requisitions on RFQ Product Requisitions on Tender Product Requisit
     'price': 49,
     'currency': "EUR",
     'website': 'https://www.browseinfo.in',
-    'depends': ['sale_management','purchase','stock','hr','sale_stock','purchase_stock'],
+    'depends': ['base', 'mail','sale_management','purchase','stock','hr','sale_stock','purchase_stock'],
     'data': [
             'security/ir.model.access.csv',
             'security/purchase_requisition_security.xml',
